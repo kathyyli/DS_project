@@ -10,7 +10,7 @@ Songs from: https://freemusicarchive.org/
 Please refer to 'DS project v4.ipynb' for the updated notebook with data analysis and model training / selection, 'DSP.py' for the web app script, 'sentimental_analysis_title.csv' for sentiment analysis of tracks. 
 
 # Data cleaning and preparation
--Combine tracks and echonest databases
+-Combine tracks and echonest databases\\
 -Extract year released from the track release date
 -Select year with most songs, and genres with most songs within that year 
 -Change the 'track_listens' variable into popular or not, in order to do classification
