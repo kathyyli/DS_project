@@ -7,7 +7,11 @@ Explanation of 'echonest.csv' features: http://docs.echonest.com.s3-website-us-e
 
 Songs from: https://freemusicarchive.org/
 
-Please refer to 'DS project v4.ipynb' for the updated notebook with data analysis and model training / selection, 'DSP.py' for the web app script, 'sentimental_analysis_title.csv' for sentiment analysis of tracks. 
+File key:
+'DS project v4.ipynb' - updated notebook with data analysis and model training / selection
+'DSP.py' - python file for prediction
+'Web App Script.txt' - web app script
+'sentimental_analysis_title.csv' - sentiment analysis of tracks
 
 Our website is at http://rlx.pythonanywhere.com/. 
 
