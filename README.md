@@ -10,14 +10,21 @@ Songs from: https://freemusicarchive.org/
 Please refer to 'DS project v4.ipynb' for the updated notebook with data analysis and model training / selection, 'DSP.py' for the web app script, 'sentimental_analysis_title.csv' for sentiment analysis of tracks. 
 
 # Data cleaning and preparation
--Combine tracks and echonest databases\\
+-Combine tracks and echonest databases
+
 -Extract year released from the track release date
+
 -Select year with most songs, and genres with most songs within that year 
+
 -Change the 'track_listens' variable into popular or not, in order to do classification
+
 -Check for correlation between variables and scale data
 
 # Modeling
 -First use a baseline model, including genre as a variable and finding that genre is an important feature
+
 -Split datasets by genre (three separate datasets for rock, hip-hop, and electronic for 2010)
+
 -Test logistic regression with penalty (L1, L2), decision tree, random forest, and knn, using GridSearch to search over parameter values
+
 -Compare AUC ROC on random subsets of data and for each genre select optimal model
