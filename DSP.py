@@ -1,6 +1,3 @@
-
-# A very simple Flask Hello World app for you to get started with...
-
 import flask
 from flask import Flask, request
 import json
@@ -82,61 +79,125 @@ def api():
     return response
 
 
-def senti(title):
-    title='die'
+
+def prediction(song_name, genre,latitude, longitude, bit_rate, duration, acousticness, danceability,energy,instrumentalness,liveness, speechiness,tempo, valence,artist_hotttnesss):
+
 
     sid = SentimentIntensityAnalyzer()
-    ss = sid.polarity_scores(title)
-    score=[]
-    for k in ss:
-        a=ss[k]
-        score.append(a)
-    senti_neg=score[0]
-    senti_pos=score[2]
-    return senti_neg, senti_pos
+    ss = sid.polarity_scores(song_name)
+    senti_neg=ss['neg']
+    senti_pos=ss['pos']
+    newline=pd.DataFrame({'latitude':latitude, 'longitude':longitude, 'bit_rate':bit_rate, 'duration':duration, 'acousticness':acousticness,
+            'danceability':danceability, 'energy':energy, 'instrumentalness':instrumentalness,'liveness':liveness,
+             'speechiness':speechiness,'tempo':tempo, 'valence':valence,'artist_hotttnesss':artist_hotttnesss,
+             'senti neg':senti_neg,'senti pos':senti_pos}, index=[372])
 
-def prediction(title,genre,latitude, longitude, bit_rate, duration, acousticness, danceability,energy,instrumentalness,liveness, speechiness,tempo, valence,artist_hotttnesss):
-    senti_analy=senti(title)
-    senti_neg=senti_analy[0]
-    senti_pos=senti_analy[1]
 
     if genre == 'Rock':
-        # df = pd.read_csv('mysite/Rock_10.csv', header=[0],dtype=float)
-        df = pd.read_csv('mysite/Rock_10.csv', dtype=float)
-        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity','Z'],axis=1,inplace=True)
-    elif genre == 'Hip-Pop':
-        # df = pd.read_csv('mysite/Hiphop_10.csv', header=[0],dtype=float)
-        df = pd.read_csv('mysite/Hiphop_10.csv', dtype=float)
-        df.drop(['track_ID','track_listens','artist_discovery','artist_familiarity','Z'],axis=1,inplace=True)
-    elif genre == 'Electronic':
-        # df = pd.read_csv('mysite/Elec_10.csv', header=[0],dtype=float)
-        df = pd.read_csv('mysite/Elec_10.csv', dtype=float)
-        df.drop(['track_ID','track_listens','artist_discovery','artist_familiarity','Z'],axis=1,inplace=True)
-    else:
-        return 'Do not find genre'
+        df = pd.read_csv('Rock_10.csv', dtype=float)
+        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
 
-    y=df[['popular']].values.ravel()
+        y=df[['popular']].values.ravel()
+        df1 = pd.concat([df,newline])
 
-    newline=pd.DataFrame({'latitude':latitude, 'longitude':longitude, 'bit_rate':bit_rate, 'duration':duration, 'acousticness':acousticness, 'danceability':danceability, 'energy':energy, 'instrumentalness':instrumentalness,'liveness':liveness, 'speechiness':speechiness,'tempo':tempo, 'valence':valence,'artist_hotttnesss':artist_hotttnesss, 'senti neg':senti_neg,'senti pos':senti_pos}, index=[372])
+        X=df1.drop(['popular'],axis=1)
 
-    df1 = pd.concat([df,newline])
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
 
-    X=df1.drop(['popular'],axis=1)
 
-    scaler = preprocessing.StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-    X_train = X_scaled[:-1,:]
-    X_test = X_scaled[-1,:].reshape(1, -1)
 
-    rfc=RandomForestClassifier()
-    param_grid = { 'max_depth' : np.arange(1,10), 'max_features' : np.arange(1,10)}
-    CV_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv= 5)
-    CV_rfc.fit(X_train, y)
-    CV_rfc.best_params_
+        rfc=RandomForestClassifier()
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        param_grid = { 'max_depth' : np.arange(1,10), 'max_features' : np.arange(1,10)}
+        CV_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv= 5)
+        CV_rfc.fit(x_train, y_train)
+        CV_rfc.best_params_
 
-    random_forest = RandomForestClassifier(n_estimators=100,max_depth=CV_rfc.best_params_['max_depth'],max_features=CV_rfc.best_params_['max_features'])
-    random_forest.fit(X_train, y)
+        random_forest = RandomForestClassifier(n_estimators=100,max_depth=CV_rfc.best_params_['max_depth'],max_features=CV_rfc.best_params_['max_features'])
+        random_forest.fit(X_train, y)
 
-    return random_forest.predict(X_test)
 
+        Y_prediction = random_forest.predict(X_test)
+    if genre == 'Hiphop':
+        df = pd.read_csv('Hiphop_10.csv', dtype=float)
+        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
+
+        y=df[['popular']].values.ravel()
+        df1 = pd.concat([df,newline])
+
+        X=df1.drop(['popular'],axis=1)
+
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
+
+
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        # Regularize over L1 penalty
+        C_vals = np.logspace(-4,0,100)
+        scores = []
+        for C_val in C_vals:
+
+            #change penalty to l1
+            regr = LogisticRegression(penalty='l1', C = C_val)
+            regr.fit(x_train, y_train)
+
+            probas_ = regr.fit(x_train, y_train).predict_proba(x_test)
+
+            fpr, tpr, thresholds = roc_curve(y_test, probas_[:, 1])
+            roc_auc = auc(fpr, tpr)
+
+            scores.append(roc_auc)
+
+        C_best_L1 = C_vals[scores.index(max(scores))]
+
+        regr = LogisticRegression(penalty='l1',C=C_best_L1)
+        regr.fit(X_train, y)
+
+
+        Y_prediction = regr.predict(X_test)
+    if genre == 'Electronic':
+        df = pd.read_csv('Elec_10.csv', dtype=float)
+        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
+
+        y=df[['popular']].values.ravel()
+        df1 = pd.concat([df,newline])
+
+        X=df1.drop(['popular'],axis=1)
+
+        scaler = preprocessing.StandardScaler()
+        X_scaled = scaler.fit_transform(X)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
+
+
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        # Regularize over L1 penalty
+        C_vals = np.logspace(-4,0,100)
+        scores = []
+        for C_val in C_vals:
+
+            #change penalty to l1
+            regr = LogisticRegression(penalty='l1', C = C_val)
+            regr.fit(x_train, y_train)
+
+            probas_ = regr.fit(x_train, y_train).predict_proba(x_test)
+
+            fpr, tpr, thresholds = roc_curve(y_test, probas_[:, 1])
+            roc_auc = auc(fpr, tpr)
+
+            scores.append(roc_auc)
+
+        C_best_L1 = C_vals[scores.index(max(scores))]
+
+        regr = LogisticRegression(penalty='l1',C=C_best_L1)
+        regr.fit(X_train, y)
+
+
+        Y_prediction = regr.predict(X_test)
+    return(Y_prediction)
 
