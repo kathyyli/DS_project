@@ -16,6 +16,8 @@ File key:
 
 'sentimental_analysis_title.csv' - sentiment analysis of tracks
 
+'Elec_10', 'Hiphop_10', 'Rock_10' - dataframe by genre
+
 Our website is at http://rlx.pythonanywhere.com/. 
 
 # Data cleaning and preparation
