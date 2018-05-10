@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[1]:
+# In[6]:
 
 
 import flask
@@ -16,14 +16,17 @@ import sklearn.utils, sklearn.preprocessing, sklearn.decomposition, sklearn.svm
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
+import sklearn.metrics
+from sklearn.metrics import roc_curve, auc
 from sklearn import preprocessing
 import nltk
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 nltk.download('vader_lexicon')
 
 
-# In[2]:
+# In[7]:
 
 
 app = Flask(__name__)
@@ -95,52 +98,55 @@ def prediction(genre,latitude, longitude, bit_rate, duration, acousticness, danc
         df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
         
         y=df[['popular']].values.ravel()
-        X=df.drop(['popular'],axis=1)
+        df1 = pd.concat([df,newline])
+
+        X=df1.drop(['popular'],axis=1)
 
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
         
 
         
-        knn = KNeighborsClassifier()
-        param_grid = { 'n_neighbors' : np.arange(1,10)}
-        CV_rfc = GridSearchCV(estimator=knn, param_grid=param_grid, cv= 5)
-        CV_rfc.fit(X_train, y_train)
+        rfc=RandomForestClassifier()
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        param_grid = { 'max_depth' : np.arange(1,10), 'max_features' : np.arange(1,10)}
+        CV_rfc = GridSearchCV(estimator=rfc, param_grid=param_grid, cv= 5)
+        CV_rfc.fit(x_train, y_train)
         CV_rfc.best_params_
 
-        knn = KNeighborsClassifier(n_neighbors=CV_rfc.best_params_['n_neighbors'])
-        knn.fit(X_scaled, y)
+        random_forest = RandomForestClassifier(n_estimators=100,max_depth=CV_rfc.best_params_['max_depth'],max_features=CV_rfc.best_params_['max_features'])
+        random_forest.fit(X_train, y)
 
+
+        Y_prediction = random_forest.predict(X_test)
+    if genre == 'Hiphop':
+        df = pd.read_csv('Hiphop_10.csv', dtype=float)
+        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
         
+        y=df[['popular']].values.ravel()
         df1 = pd.concat([df,newline])
-        X1=df1.drop(['popular'],axis=1)
-        scaler = preprocessing.StandardScaler()
-        X1_scaled = scaler.fit_transform(X1)
-        X_test = X1_scaled[-1,:].reshape(1, -1)
 
-
-        Y_prediction = knn.predict(X_test)
-    elif genre == 'Hiphop':
-        df = pd.read_csv('Hiphop_10.csv',dtype=float)
-        df.drop(['track_ID','track_listens','artist_discovery','artist_familiarity'],axis=1,inplace=True)
-        y=df[['popular']].values.ravel()
-        X=df.drop(['popular'],axis=1)
+        X=df1.drop(['popular'],axis=1)
 
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X)
-        X_test = scaler.fit_transform(newline.values)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
         
 
-        # L1 penalty
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        # Regularize over L1 penalty 
         C_vals = np.logspace(-4,0,100)
         scores = []
         for C_val in C_vals:
 
             #change penalty to l1
             regr = LogisticRegression(penalty='l1', C = C_val)
-            regr.fit(X_scaled, y)
+            regr.fit(x_train, y_train)
 
-            probas_ = regr.fit(X_scaled, y).predict_proba(X_test)
+            probas_ = regr.fit(x_train, y_train).predict_proba(x_test)
 
             fpr, tpr, thresholds = roc_curve(y_test, probas_[:, 1])
             roc_auc = auc(fpr, tpr)
@@ -148,34 +154,38 @@ def prediction(genre,latitude, longitude, bit_rate, duration, acousticness, danc
             scores.append(roc_auc)
 
         C_best_L1 = C_vals[scores.index(max(scores))]
-
+  
         regr = LogisticRegression(penalty='l1',C=C_best_L1)
-        regr.fit(X_scaled, y)
-        Y_prediction =regr.predict(X_test)
+        regr.fit(X_train, y)
 
 
-    elif genre == 'Elec':
-        df = pd.read_csv('Elec_10.csv' ,dtype=float)
-        df.drop(['track_ID','track_listens','artist_discovery','artist_familiarity'],axis=1,inplace=True)
-    
+        Y_prediction = regr.predict(X_test)
+    if genre == 'Electronic':
+        df = pd.read_csv('Elec_10.csv', dtype=float)
+        df.drop(['track_ID','track_listens', 'artist_discovery','artist_familiarity'],axis=1,inplace=True)
+        
         y=df[['popular']].values.ravel()
-        X=df.drop(['popular'],axis=1)
+        df1 = pd.concat([df,newline])
+
+        X=df1.drop(['popular'],axis=1)
 
         scaler = preprocessing.StandardScaler()
         X_scaled = scaler.fit_transform(X)
-        X_test = scaler.fit_transform(newline.values)
+        X_train = X_scaled[:-1,:]
+        X_test = X_scaled[-1,:].reshape(1, -1)
         
 
-        # L1 penalty
+        x_train, x_test, y_train, y_test = train_test_split(X_train, y, test_size=0.2, random_state=7)
+        # Regularize over L1 penalty 
         C_vals = np.logspace(-4,0,100)
         scores = []
         for C_val in C_vals:
 
             #change penalty to l1
             regr = LogisticRegression(penalty='l1', C = C_val)
-            regr.fit(X_scaled, y)
+            regr.fit(x_train, y_train)
 
-            probas_ = regr.fit(X_scaled, y).predict_proba(X_test)
+            probas_ = regr.fit(x_train, y_train).predict_proba(x_test)
 
             fpr, tpr, thresholds = roc_curve(y_test, probas_[:, 1])
             roc_auc = auc(fpr, tpr)
@@ -183,9 +193,11 @@ def prediction(genre,latitude, longitude, bit_rate, duration, acousticness, danc
             scores.append(roc_auc)
 
         C_best_L1 = C_vals[scores.index(max(scores))]
-
+  
         regr = LogisticRegression(penalty='l1',C=C_best_L1)
-        regr.fit(X_scaled, y)
-        Y_prediction =regr.predict(X_test)
+        regr.fit(X_train, y)
+
+
+        Y_prediction = regr.predict(X_test)
     return(Y_prediction)
 
