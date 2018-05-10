@@ -9,8 +9,11 @@ Songs from: https://freemusicarchive.org/
 
 File key:
 'DS project v4.ipynb' - updated notebook with data analysis and model training / selection
+
 'DSP.py' - python file for prediction
+
 'Web App Script.txt' - web app script
+
 'sentimental_analysis_title.csv' - sentiment analysis of tracks
 
 Our website is at http://rlx.pythonanywhere.com/. 
